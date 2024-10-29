@@ -1,0 +1,155 @@
+{
+    "displayName": "(ArcBox) Deploy Monitoring and Governance for Linux-Arc VMs",
+    "policyType": "Custom",
+    "description": "Deploy and configure Azure Monitor Agent, Change Tracking and Inventory and Microsoft Defender for Endpoint on Linux Hybrid VMs.",
+    "metadata": {
+      "version": "1.0.0",
+      "category": "Monitoring"
+    },
+    "version": "1.0.0",
+    "parameters": {      
+      "effect": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Effect for all constituent policies",
+          "description": "Enable or disable the execution of each of the constituent policies in the initiative."
+        },
+        "allowedValues": [
+          "DeployIfNotExists",
+          "AuditIfNotExists",
+          "Disabled"
+        ],
+        "defaultValue": "DeployIfNotExists"
+      },
+      "dcrResourceId": {
+        "type": "String",
+        "metadata": {
+          "displayName": "VMI Data Collection Rule Resource Id",
+          "description": "VMI Data Collection Rule Resource Id. Please refer to this link for newer experience migration: https://aka.ms/vminsights-dcrOnboarding",
+          "portalReview": "true"
+        }
+      },
+      "assessmentMode": {
+        "allowedValues": [
+          "ImageDefault",
+          "AutomaticByPlatform"
+        ],
+        "defaultValue": "AutomaticByPlatform",
+        "metadata": {
+          "description": "Assessment mode for the machines.",
+          "displayName": "Assessment mode"
+        },
+        "type": "String"
+      },
+      "locations": {
+        "defaultValue": [],
+        "metadata": {
+          "description": "The list of locations from which machines need to be targeted.",
+          "displayName": "Machines locations",
+          "strongType": "location"
+        },
+        "type": "Array"
+      },
+      "osType": {
+        "allowedValues": [
+          "Windows",
+          "Linux"
+        ],
+        "defaultValue": "Linux",
+        "metadata": {
+          "description": "OS type for the machines.",
+          "displayName": "OS type"
+        },
+        "type": "String"
+      },
+      "tagOperator": {
+        "allowedValues": [
+          "All",
+          "Any"
+        ],
+        "defaultValue": "Any",
+        "metadata": {
+          "description": "Matching condition for resource tags",
+          "displayName": "Tag operator"
+        },
+        "type": "String"
+      },
+      "tagValues": {
+        "defaultValue": {},
+        "metadata": {
+          "description": "The list of tags that need to matched for getting target machines.",
+          "displayName": "Tags on machines"
+        },
+        "type": "Object"
+      }
+    },
+    "policyDefinitions": [      
+      {
+        "policyDefinitionReferenceId": "AzureMonitorAgent_Linux_HybridVM_Deploy",
+        "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/845857af-0333-4c5d-bbbc-6076697da122",
+        "definitionVersion": "2.*.*",
+        "effectiveDefinitionVersion": "2.4.0",
+        "parameters": {
+          "effect": {
+            "value": "[parameters('effect')]"
+          }
+        }
+      },
+      {
+        "policyDefinitionReferenceId": "DataCollectionRuleAssociation_Linux",
+        "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/2ea82cdd-f2e8-4500-af75-67a2e084ca74",
+        "definitionVersion": "6.*.*",
+        "effectiveDefinitionVersion": "6.5.1",
+        "parameters": {
+          "dcrResourceId": {
+            "value": "[parameters('dcrResourceId')]"
+          }
+        }
+      },
+      {
+        "policyDefinitionReferenceId": "microsoftDefenderForEndpointLinuxArcAgentDeploy",
+        "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/4eb909e7-6d64-656d-6465-2eeb297a1625",
+        "definitionVersion": "2.*.*-preview",
+        "effectiveDefinitionVersion": "2.0.1-preview",
+        "parameters": {
+          "effect": {
+            "value": "[parameters('effect')]"
+          }
+        }
+      },
+      {
+        "policyDefinitionReferenceId": "DeployChangeTrackingExtensionLinuxHybridVM",
+        "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/10caed8a-652c-4d1d-84e4-2805b7c07278",
+        "definitionVersion": "2.*.*-preview",
+        "effectiveDefinitionVersion": "2.0.0-preview",
+        "parameters": {
+          "effect": {
+            "value": "[parameters('effect')]"
+          }
+        }
+      },
+      {
+        "policyDefinitionReferenceId": "UpdateManagerLinuxHybridVM",
+        "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/bfea026e-043f-4ff4-9d1b-bf301ca7ff46",
+        "definitionVersion": "2.*.*",
+        "effectiveDefinitionVersion": "2.3.0",
+        "parameters": {
+          "assessmentMode": {
+            "value": "[parameters('assessmentMode')]"
+          },
+          "locations": {
+            "value": "[parameters('locations')]"
+          },
+          "osType": {
+            "value": "[parameters('osType')]"
+          },
+          "tagOperator": {
+            "value": "[parameters('tagOperator')]"
+          },
+          "tagValues": {
+            "value": "[parameters('tagValues')]"
+          }
+        }
+      }   
+    ]
+  }

@@ -1,0 +1,122 @@
+{
+    "description": "Data collection rule for Linux Servers.",
+    "dataSources": {
+        "performanceCounters": [
+    {
+      "name": "LinuxPerformanceCounters",
+      "samplingFrequencyInSeconds": 60,
+      "streams": [
+        "Microsoft-Perf"
+      ],
+      "counterSpecifiers": [
+        "Processor:% Processor Time",
+        "Processor:% User Time",
+        "Processor:% Privileged Time",
+        "Processor:% IO Wait Time",
+        "Processor:% Idle Time",
+        "Processor:% DPC Time",
+        "System:Processes",
+        "System:Free Physical Memory",
+        "System:Free Virtual Memory",
+        "Memory:% Available Memory",
+        "Memory:% Used Memory",
+        "Memory:Available MBytes Memory",
+        "Memory:Used Memory MBytes",
+        "LogicalDisk:% Used Space",
+        "LogicalDisk:% Free Space",
+        "LogicalDisk:Disk Writes/sec",
+        "LogicalDisk:Disk Reads/sec",
+        "Network:Total Bytes Transmitted",
+        "Network:Total Bytes Received",
+        "Network:Total Bytes"
+      ]
+    }
+  ],
+  "syslog": [
+    {
+      "name": "Syslog",
+      "streams": [
+        "Microsoft-Syslog"
+      ],
+      "facilityNames": [
+        "auth",
+        "authpriv",
+        "audit",
+        "syslog",
+        "user"
+      ],
+      "logLevels": [
+        "Info",
+        "Error"
+      ]
+    }
+  ],
+        "extensions": [
+            {
+                "streams": [
+                    "Microsoft-ConfigurationChange",
+                    "Microsoft-ConfigurationChangeV2",
+                    "Microsoft-ConfigurationData"
+                ],
+                "extensionName": "ChangeTracking-Linux",
+                "extensionSettings": {
+                    "enableFiles": true,
+                    "enableSoftware": true,
+                    "enableRegistry": false,
+                    "enableServices": true,
+                    "enableInventory": true,
+                    "fileSettings": {
+                        "fileCollectionFrequency": 900,
+                        "fileInfo": [
+                            {
+                                "name": "ChangeTrackingLinuxPath_default",
+                                "enabled": true,
+                                "destinationPath": "/etc/.*.conf",
+                                "useSudo": true,
+                                "recurse": true,
+                                "maxContentsReturnable": 5000000,
+                                "pathType": "File",
+                                "type": "File",
+                                "links": "Follow",
+                                "maxOutputSize": 500000,
+                                "groupTag": "Recommended"
+                            }
+                        ]
+                    },
+                    "softwareSettings": {
+                        "softwareCollectionFrequency": 300
+                    },
+                    "inventorySettings": {
+                        "inventoryCollectionFrequency": 36000
+                    },
+                    "servicesSettings": {
+                        "serviceCollectionFrequency": 300
+                    }
+                },
+                "name": "CTDataSource-Linux"
+            }
+        ]
+    },
+    "destinations": {
+        "logAnalytics": [
+            {
+                "workspaceResourceId": "[parameters('workspaceResourceId')]",
+                "name": "Linux-Dest"
+            }
+        ]
+    },
+    "dataFlows": [
+        {
+            "streams": [
+                "Microsoft-Syslog",
+                "Microsoft-Perf",
+                "Microsoft-ConfigurationChange",
+                "Microsoft-ConfigurationChangeV2",
+                "Microsoft-ConfigurationData"
+            ],
+            "destinations": [
+                "Linux-Dest"
+            ]
+        }
+    ]
+}

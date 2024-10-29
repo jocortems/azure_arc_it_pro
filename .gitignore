@@ -1,0 +1,15 @@
+# Exclude SQL Dashboards Directory
+sql-dashboards/
+
+# Exclude Terraform Directories
+**/.terraform
+
+# Exclude Terraform Lock file
+**/.terraform.lock.*
+
+# Exclude Terraform State Files
+**/*.tfstate
+**/*.tfstate.*
+
+# Exclude .tfvars files
+**/*.tfvars

@@ -1,0 +1,116 @@
+{
+    "description": "Data collection rule for Linux Servers.",
+    "dataSources": {
+        "performanceCounters": [
+            {
+                "name": "LinuxPerformanceCounters",
+                "samplingFrequencyInSeconds": 60,
+                "streams": [
+                    "Microsoft-Perf"
+                ],
+                "counterSpecifiers": [
+                    "Processor(*)\\% Processor Time",
+                    "Processor(*)\\% Idle Time",
+                    "Processor(*)\\% User Time",
+                    "Processor(*)\\% Privileged Time",
+                    "Memory(*)\\Available MBytes Memory",
+                    "Memory(*)\\Used Memory MBytes",
+                    "Memory(*)\\% Used Memory",
+                    "Process(*)\\Used Memory",
+                    "Logical Disk(*)\\% Free Space",
+                    "Logical Disk(*)\\% Used Space",
+                    "Logical Disk(*)\\Disk Read Bytes/sec",
+                    "Logical Disk(*)\\Disk Write Bytes/sec",
+                    "Network(*)\\Total Bytes Transmitted",
+                    "Network(*)\\Total Bytes Received"
+                ]
+            }
+        ],
+        "syslog": [
+            {
+                "name": "Syslog",
+                "streams": [
+                    "Microsoft-Syslog"
+                ],
+                "facilityNames": [
+                    "auth",
+                    "authpriv",
+                    "audit",
+                    "syslog",
+                    "user"
+                ],
+                "logLevels": [
+                    "Info",
+                    "Error"
+                ]
+            }
+        ],
+        "extensions": [
+            {
+                "streams": [
+                    "Microsoft-ConfigurationChange",
+                    "Microsoft-ConfigurationChangeV2",
+                    "Microsoft-ConfigurationData"
+                ],
+                "extensionName": "ChangeTracking-Linux",
+                "extensionSettings": {
+                    "enableFiles": true,
+                    "enableSoftware": true,
+                    "enableRegistry": false,
+                    "enableServices": true,
+                    "enableInventory": true,
+                    "fileSettings": {
+                        "fileCollectionFrequency": 900,
+                        "fileInfo": [
+                            {
+                                "name": "ChangeTrackingLinuxPath_default",
+                                "enabled": true,
+                                "destinationPath": "/etc/.*.conf",
+                                "useSudo": true,
+                                "recurse": true,
+                                "maxContentsReturnable": 5000000,
+                                "pathType": "File",
+                                "type": "File",
+                                "links": "Follow",
+                                "maxOutputSize": 500000,
+                                "groupTag": "Recommended"
+                            }
+                        ]
+                    },
+                    "softwareSettings": {
+                        "softwareCollectionFrequency": 300
+                    },
+                    "inventorySettings": {
+                        "inventoryCollectionFrequency": 36000
+                    },
+                    "servicesSettings": {
+                        "serviceCollectionFrequency": 300
+                    }
+                },
+                "name": "CTDataSource-Linux"
+            }
+        ]
+    },
+    "destinations": {
+        "logAnalytics": [
+            {
+                "workspaceResourceId": "${LOGANLYTICS_WORKSPACEID}",
+                "name": "Linux-Dest"
+            }
+        ]
+    },
+    "dataFlows": [
+        {
+            "streams": [
+                "Microsoft-Syslog",
+                "Microsoft-Perf",
+                "Microsoft-ConfigurationChange",
+                "Microsoft-ConfigurationChangeV2",
+                "Microsoft-ConfigurationData"
+            ],
+            "destinations": [
+                "Linux-Dest"
+            ]
+        }
+    ]
+}

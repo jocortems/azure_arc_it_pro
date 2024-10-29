@@ -1,0 +1,180 @@
+{
+    "displayName": "(ArcBox) Deploy Monitoring and Governance for Windows-Arc VMs",
+    "policyType": "Custom",
+    "description": "Deploy and configure Azure Monitor Agent, Dependency Agent, Change Tracking and Inventory and Microsoft Defender for Endpoint on Windows Hybrid VMs.",
+    "metadata": {
+      "version": "1.0.0",
+      "category": "Monitoring"
+    },
+    "version": "1.0.0",
+    "parameters": {
+      "enableProcessesAndDependencies": {
+        "type": "Boolean",
+        "metadata": {
+          "displayName": "Enable Processes and Dependencies",
+          "description": "This is the flag for enabling processes and dependencies data collection in VMInsights"
+        },
+        "allowedValues": [
+          true,
+          false
+        ],
+        "defaultValue": true
+      },
+      "effect": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Effect for all constituent policies",
+          "description": "Enable or disable the execution of each of the constituent policies in the initiative."
+        },
+        "allowedValues": [
+          "DeployIfNotExists",
+          "Disabled"
+        ],
+        "defaultValue": "DeployIfNotExists"
+      },
+      "dcrResourceId": {
+        "type": "String",
+        "metadata": {
+          "displayName": "VMI Data Collection Rule Resource Id",
+          "description": "VMI Data Collection Rule Resource Id. Please refer to this link for newer experience migration: https://aka.ms/vminsights-dcrOnboarding",
+          "portalReview": "true"
+        }
+      },
+      "assessmentMode": {
+        "allowedValues": [
+          "ImageDefault",
+          "AutomaticByPlatform"
+        ],
+        "defaultValue": "AutomaticByPlatform",
+        "metadata": {
+          "description": "Assessment mode for the machines.",
+          "displayName": "Assessment mode"
+        },
+        "type": "String"
+      },
+      "locations": {
+        "defaultValue": [],
+        "metadata": {
+          "description": "The list of locations from which machines need to be targeted.",
+          "displayName": "Machines locations",
+          "strongType": "location"
+        },
+        "type": "Array"
+      },
+      "osType": {
+        "allowedValues": [
+          "Windows",
+          "Linux"
+        ],
+        "defaultValue": "Windows",
+        "metadata": {
+          "description": "OS type for the machines.",
+          "displayName": "OS type"
+        },
+        "type": "String"
+      },
+      "tagOperator": {
+        "allowedValues": [
+          "All",
+          "Any"
+        ],
+        "defaultValue": "Any",
+        "metadata": {
+          "description": "Matching condition for resource tags",
+          "displayName": "Tag operator"
+        },
+        "type": "String"
+      },
+      "tagValues": {
+        "defaultValue": {},
+        "metadata": {
+          "description": "The list of tags that need to matched for getting target machines.",
+          "displayName": "Tags on machines"
+        },
+        "type": "Object"
+      }
+    },
+    "policyDefinitions": [
+      {
+        "policyDefinitionReferenceId": "AzureMonitorAgent_Windows_HybridVM_Deploy",
+        "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/94f686d6-9a24-4e19-91f1-de937dc171a4",
+        "definitionVersion": "2.*.*",
+        "effectiveDefinitionVersion": "2.4.0",
+        "parameters": {
+          "effect": {
+            "value": "[parameters('effect')]"
+          }
+        }
+      },
+      {
+        "policyDefinitionReferenceId": "DependencyAgentExtension_AMA_Windows_HybridVM_Deploy",
+        "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/84cfed75-dfd4-421b-93df-725b479d356a",
+        "definitionVersion": "1.*.*-preview",
+        "effectiveDefinitionVersion": "1.2.0",
+        "parameters": {
+          "effect": {
+            "value": "[parameters('effect')]"
+          },
+          "enableProcessesAndDependencies": {
+            "value": "[parameters('enableProcessesAndDependencies')]"
+          }
+        }
+      },
+      {
+        "policyDefinitionReferenceId": "DataCollectionRuleAssociation_Windows",
+        "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/eab1f514-22e3-42e3-9a1f-e1dc9199355c",
+        "definitionVersion": "4.*.*",
+        "effectiveDefinitionVersion": "4.5.1",
+        "parameters": {
+          "dcrResourceId": {
+            "value": "[parameters('dcrResourceId')]"
+          }
+        }
+      },
+      {
+        "policyDefinitionReferenceId": "microsoftDefenderForEndpointWindowsArcAgentDeploy",
+        "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/37c043a6-6d64-656d-6465-b362dfeb354a",
+        "definitionVersion": "2.*.*-preview",
+        "effectiveDefinitionVersion": "2.0.1-preview",
+        "parameters": {
+          "effect": {
+            "value": "[parameters('effect')]"
+          }
+        }
+      },
+      {
+        "policyDefinitionReferenceId": "DeployChangeTrackingExtensionWindowsHybridVM",
+        "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/4bb303db-d051-4099-95d2-e3e1428a4cd5",
+        "definitionVersion": "2.*.*-preview",
+        "effectiveDefinitionVersion": "2.0.0-preview",
+        "parameters": {
+          "effect": {
+            "value": "[parameters('effect')]"
+          }
+        }
+      },
+      {
+        "policyDefinitionReferenceId": "UpdateManagerWindowsHybridVM",
+        "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/bfea026e-043f-4ff4-9d1b-bf301ca7ff46",
+        "definitionVersion": "2.*.*",
+        "effectiveDefinitionVersion": "2.3.0",
+        "parameters": {
+          "assessmentMode": {
+            "value": "[parameters('assessmentMode')]"
+          },
+          "locations": {
+            "value": "[parameters('locations')]"
+          },
+          "osType": {
+            "value": "[parameters('osType')]"
+          },
+          "tagOperator": {
+            "value": "[parameters('tagOperator')]"
+          },
+          "tagValues": {
+            "value": "[parameters('tagValues')]"
+          }
+        }
+      }
+    ]
+  }
