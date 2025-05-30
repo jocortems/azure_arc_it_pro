@@ -11,7 +11,7 @@ resource "azurerm_virtual_network" "vnet" {
 }
 
 resource "azurerm_subnet" "subnet" {
-  name                 = "Arc VM"
+  name                 = "Arc-VM"
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = [cidrsubnet(var.vnet_cidr[0], 8, 0)]
@@ -55,6 +55,7 @@ resource "azurerm_network_interface" "nic" {
     private_ip_address_allocation   = "Static"
     private_ip_address              = cidrhost(azurerm_subnet.subnet.address_prefixes[0], 10)
     primary                         = true
+    public_ip_address_id            = azurerm_public_ip.vm_ip.id
   }
 }
 
@@ -66,7 +67,8 @@ resource "azurerm_windows_virtual_machine" "arc_machine" {
     admin_username        = var.vm_admin_username
     admin_password        = var.vm_admin_password
     network_interface_ids = [azurerm_network_interface.nic.id]
-    provision_vm_agent = true
+    provision_vm_agent    = true
+    zone                  = "1"
 
     os_disk {
         caching              = "ReadWrite"
@@ -76,7 +78,7 @@ resource "azurerm_windows_virtual_machine" "arc_machine" {
     source_image_reference {
         publisher = "MicrosoftWindowsServer"
         offer     = "WindowsServer"
-        sku       = "2022-datacenter-g2"
+        sku       = "2025-datacenter-g2"
         version   = "latest"
     }    
 }
@@ -99,9 +101,27 @@ resource "azurerm_virtual_machine_extension" "arc_machine_extension" {
   protected_settings = <<PROTECTED_SETTINGS
     {
       "fileUris": [
-        "${template_base_url}/artifacts/Bootstrap.ps1"
+        "${var.template_base_url}/artifacts/Bootstrap.ps1"
       ],
-      "commandToExecute": "powershell.exe -ExecutionPolicy Bypass -File Bootstrap.ps1 -adminUsername ${vm_admin_username} -adminPassword ${vm_admin_password} -acceptEula \"yes\" -templateBaseUrl ${template_base_url} -rdpPort 3389 -vmAutologon ${vm_autologon} -namingPrefix ${naming_prefix} -debugEnabled ${debug_enabled}"
+      "commandToExecute": "powershell.exe -ExecutionPolicy Bypass -File Bootstrap.ps1 -adminUsername ${var.vm_admin_username} -adminPassword ${var.vm_admin_password} -acceptEula \"yes\" -templateBaseUrl ${var.template_base_url} -rdpPort 3389 -vmAutologon ${var.vm_autologon} -namingPrefix ${var.naming_prefix} -debugEnabled ${var.debug_enabled}"
     }
   PROTECTED_SETTINGS
+}
+
+resource "azurerm_network_security_group" "arc_nsg" {
+  name                = "arc-nsg-${random_string.prefix.result}"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  security_rule {
+    name                       = "AllowMyIp"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
 }

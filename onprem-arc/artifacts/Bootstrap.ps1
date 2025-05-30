@@ -141,6 +141,40 @@ If (-NOT (Test-Path $RegistryPath)) {
 }
 New-ItemProperty -Path $RegistryPath -Name $Name -Value $Value -PropertyType DWORD -Force
 
+# Disable Microsoft Edge first-run Welcome screen
+$RegistryPath = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge'
+$Name = 'HideFirstRunExperience'
+$Value = '00000001'
+
+# Create the key if it does not exist
+If (-NOT (Test-Path $RegistryPath)) {
+    New-Item -Path $RegistryPath -Force | Out-Null
+}
+New-ItemProperty -Path $RegistryPath -Name $Name -Value $Value -PropertyType DWORD -Force
+
+# Set Diagnostic Data Settings
+$telemetryPath = "HKLM:\Software\Policies\Microsoft\Windows\DataCollection"
+$telemetryProperty = "AllowTelemetry"
+$telemetryValue = 3
+$oobePath = "HKLM:\Software\Policies\Microsoft\Windows\OOBE"
+$oobeProperty = "DisablePrivacyExperience"
+$oobeValue = 1
+
+# Create the registry key and set the value for AllowTelemetry
+if (-not (Test-Path $telemetryPath)) {
+    New-Item -Path $telemetryPath -Force | Out-Null
+}
+Set-ItemProperty -Path $telemetryPath -Name $telemetryProperty -Value $telemetryValue
+
+# Create the registry key and set the value for DisablePrivacyExperience
+if (-not (Test-Path $oobePath)) {
+    New-Item -Path $oobePath -Force | Out-Null
+}
+Set-ItemProperty -Path $oobePath -Name $oobeProperty -Value $oobeValue
+
+Write-Host "Registry keys and values for Diagnostic Data settings have been set successfully."
+
+
 # Change RDP Port
 Write-Host "RDP port number from configuration is $rdpPort"
 if (($rdpPort -ne $null) -and ($rdpPort -ne "") -and ($rdpPort -ne "3389")) {
@@ -169,6 +203,42 @@ if (($rdpPort -ne $null) -and ($rdpPort -ne "") -and ($rdpPort -ne "3389")) {
 
     Write-Host "RDP port configuration complete."
 }
+
+# Workaround for https://github.com/microsoft/azure_arc/issues/3035
+
+# Define firewall rule name
+$ruleName = "Block RDP UDP 3389"
+
+# Check if the rule already exists
+$existingRule = Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue
+
+if ($existingRule) {
+    Write-Host "Firewall rule '$ruleName' already exists. No changes made."
+} else {
+    # Create a new firewall rule to block UDP traffic on port 3389
+    New-NetFirewallRule -DisplayName $ruleName -Direction Inbound -Protocol UDP -LocalPort 3389 -Action Block -Enabled True
+    Write-Host "Firewall rule '$ruleName' created successfully. RDP UDP is now blocked."
+}
+
+# Define the registry path
+$registryPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services"
+
+# Define the registry key name
+$registryName = "fClientDisableUDP"
+
+# Define the value (1 = Disable Connect Time Detect and Continuous Network Detect)
+$registryValue = 1
+
+# Check if the registry path exists, if not, create it
+if (-not (Test-Path $registryPath)) {
+    New-Item -Path $registryPath -Force | Out-Null
+}
+
+# Set the registry key
+Set-ItemProperty -Path $registryPath -Name $registryName -Value $registryValue -Type DWord
+
+# Confirm the change
+Write-Host "Registry setting applied successfully. fClientDisableUDP set to $registryValue"
 
 Write-Header "Configuring Logon Scripts"
 

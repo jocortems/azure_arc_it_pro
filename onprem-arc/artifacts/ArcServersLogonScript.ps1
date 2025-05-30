@@ -32,14 +32,6 @@ foreach ($key in $keys) {
     }
 }
 
-# Create Windows Terminal desktop shortcut
-$WshShell = New-Object -comObject WScript.Shell
-$WinTerminalPath = (Get-ChildItem "C:\Program Files\WindowsApps" -Recurse | Where-Object { $_.name -eq "wt.exe" }).FullName
-$Shortcut = $WshShell.CreateShortcut("$Env:USERPROFILE\Desktop\Windows Terminal.lnk")
-$Shortcut.TargetPath = $WinTerminalPath
-$shortcut.WindowStyle = 3
-$shortcut.Save()
-
 # Create desktop shortcut for Logs-folder
 $WshShell = New-Object -comObject WScript.Shell
 $LogsPath = "C:\ArcBox\Logs"
@@ -177,11 +169,11 @@ if (Test-Path $registryPath) {
     # Onboard nested Windows and Linux VMs to Azure Arc
         Write-Header "Fetching Nested VMs"
 
-        $Win2k19vmName = "$namingPrefix-Win2K19"
-        $win2k19vmvhdPath = "${Env:ArcBoxVMDir}\ArcBox-Win2K19.vhdx"
-
         $Win2k22vmName = "$namingPrefix-Win2K22"
         $Win2k22vmvhdPath = "${Env:ArcBoxVMDir}\ArcBox-Win2K22.vhdx"
+
+        $Win2k25vmName = "$namingPrefix-Win2K25"
+        $Win2k25vmvhdPath = "${Env:ArcBoxVMDir}\ArcBox-Win2K25.vhdx"
 
         $Ubuntu01vmName = "$namingPrefix-Ubuntu-01"
         $Ubuntu01vmvhdPath = "${Env:ArcBoxVMDir}\ArcBox-Ubuntu-01.vhdx"
@@ -190,11 +182,11 @@ if (Test-Path $registryPath) {
         $Ubuntu02vmvhdPath = "${Env:ArcBoxVMDir}\ArcBox-Ubuntu-02.vhdx"
 
         # Verify if VHD files already downloaded especially when re-running this script
-        if (!((Test-Path $win2k19vmvhdPath) -and (Test-Path $Win2k22vmvhdPath) -and (Test-Path $Ubuntu01vmvhdPath) -and (Test-Path $Ubuntu02vmvhdPath))) {
+        if (!((Test-Path $win2k25vmvhdPath) -and (Test-Path $Win2k22vmvhdPath) -and (Test-Path $Ubuntu01vmvhdPath) -and (Test-Path $Ubuntu02vmvhdPath))) {
             <# Action when all if and elseif conditions are false #>
             $Env:AZCOPY_BUFFER_GB = 4
             Write-Output "Downloading nested VMs VHDX files. This can take some time, hold tight..."
-            azcopy cp $vhdSourceFolder $Env:ArcBoxVMDir --include-pattern "ArcBox-Win2K19.vhdx;ArcBox-Win2K22.vhdx;ArcBox-Ubuntu-01.vhdx;ArcBox-Ubuntu-02.vhdx;" --recursive=true --check-length=false --log-level=ERROR
+            azcopy cp $vhdSourceFolder $Env:ArcBoxVMDir --include-pattern "ArcBox-Win2K25.vhdx;ArcBox-Win2K22.vhdx;ArcBox-Ubuntu-01.vhdx;ArcBox-Ubuntu-02.vhdx;" --recursive=true --check-length=false --log-level=ERROR
         }
 
         # Create the nested VMs if not already created
@@ -215,7 +207,7 @@ if (Test-Path $registryPath) {
         # Restarting Windows VM Network Adapters
         Write-Header "Restarting Network Adapters"
         Start-Sleep -Seconds 5
-        Invoke-Command -VMName $Win2k19vmName -ScriptBlock { Get-NetAdapter | Restart-NetAdapter } -Credential $winCreds
+        Invoke-Command -VMName $Win2k25vmName -ScriptBlock { Get-NetAdapter | Restart-NetAdapter } -Credential $winCreds
         Invoke-Command -VMName $Win2k22vmName -ScriptBlock { Get-NetAdapter | Restart-NetAdapter } -Credential $winCreds
         Start-Sleep -Seconds 10
 
@@ -223,16 +215,29 @@ if (Test-Path $registryPath) {
 
             # Renaming the nested VMs
             Write-Header "Renaming the nested Windows VMs"
-            Invoke-Command -VMName $Win2k19vmName -ScriptBlock { Rename-Computer -newName $using:Win2k19vmName -Restart } -Credential $winCreds
-            Invoke-Command -VMName $Win2k22vmName -ScriptBlock { Rename-Computer -newName $using:Win2k22vmName -Restart } -Credential $winCreds
-
-            Get-VM *Win* | Wait-VM -For IPAddress
+            
+            Invoke-Command -VMName $Win2k22vmName -ScriptBlock { 
+                if ($env:computername -cne $using:Win2k22vmName) {
+                Rename-Computer -newName $using:Win2k22vmName -Restart
+             } 
+            } -Credential $winCreds
+            Invoke-Command -VMName $Win2k25vmName -ScriptBlock { 
+                if ($env:computername -cne $using:Win2k25vmName) {
+                    Rename-Computer -NewName $using:Win2k25vmName -Restart
+                } 
+            } -Credential $winCreds
 
             Write-Host "Waiting for the nested Windows VMs to come back online...waiting for 10 seconds"
+
+            Get-VM *Win* | Restart-VM -Force
+            Get-VM *Win* | Wait-VM -For Heartbeat
+
+            
 
             Start-Sleep -Seconds 10
 
         }
+         
 
         # Getting the Ubuntu nested VM IP address
         $Ubuntu01VmIp = Get-VM -Name $Ubuntu01vmName | Select-Object -ExpandProperty NetworkAdapters | Select-Object -ExpandProperty IPAddresses | Select-Object -Index 0
@@ -244,11 +249,17 @@ if (Test-Path $registryPath) {
         $null = New-Item -Path ~ -Name .ssh -ItemType Directory
         ssh-keygen -t rsa -N '' -f $Env:USERPROFILE\.ssh\id_rsa
 
-        Copy-Item -Path "$Env:USERPROFILE\.ssh\id_rsa.pub" -Destination "$Env:TEMP\authorized_keys"
+       
+
+        Copy-Item -Path "$Env:USERPROFILE\.ssh\id_rsa.pub" -Destination "$Env:TEMP/authorized_keys"
 
         # Automatically accept unseen keys but will refuse connections for changed or invalid hostkeys.
         Add-Content -Path "$Env:USERPROFILE\.ssh\config" -Value "StrictHostKeyChecking=accept-new"
 
+        # Waiting for Linux VMs to come online
+        Start-Sleep -Seconds 10
+
+        Get-VM *Ubuntu* | Wait-VM -For Heartbeat
         Get-VM *Ubuntu* | Copy-VMFile -SourcePath "$Env:TEMP\authorized_keys" -DestinationPath "/home/$nestedLinuxUsername/.ssh/" -FileSource Host -Force -CreateFullPath
 
         if ($namingPrefix -ne "ArcBox") {
@@ -262,7 +273,7 @@ if (Test-Path $registryPath) {
 
                 }
 
-                Restart-VM -Name $ubuntu01vmName
+                Restart-VM -Name $ubuntu01vmName -Force
 
                 Invoke-Command -HostName $Ubuntu02VmIp -KeyFilePath "$Env:USERPROFILE\.ssh\id_rsa" -UserName $nestedLinuxUsername -ScriptBlock {
 
@@ -270,7 +281,8 @@ if (Test-Path $registryPath) {
 
                 }
 
-                Restart-VM -Name $ubuntu02vmName
+                Restart-VM -Name $ubuntu02vmName -Force
+                
 
             }
 
@@ -288,7 +300,7 @@ if (Test-Path $registryPath) {
 
 Write-Header "Creating deployment logs bundle"
 
-$RandomString = -join ((48..57) + (97..122) | Get-Random -Count 6 | % {[char]$_})
+$RandomString = -join ((48..57) + (97..122) | Get-Random -Count 6 | ForEach-Object {[char]$_})
 $LogsBundleTempDirectory = "$Env:windir\TEMP\LogsBundle-$RandomString"
 $null = New-Item -Path $LogsBundleTempDirectory -ItemType Directory -Force
 

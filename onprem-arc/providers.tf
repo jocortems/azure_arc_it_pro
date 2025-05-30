@@ -22,7 +22,6 @@ terraform {
     }
   }
 }
-
 provider "azurerm" {
   features {
     resource_group {
@@ -48,8 +47,8 @@ data "http" "my_ip" {
   url = "https://ipv4.jsonip.com/"
 }
 
-data "jq" "my_ip" {
-  input = data.http.my_ip.body
+data "jq_query" "my_ip" {
+  data = data.http.my_ip.response_body
   query = ".ip"
 }
 

@@ -23,7 +23,7 @@ locals {
         "Arc - Deployment Progress" = "https://raw.githubusercontent.com/microsoft/sql-server-samples/refs/heads/master/samples/features/azure-arc/dashboard/Arc%20-%20Deployment%20Progress.json"
         "Arc - ESU" = "https://raw.githubusercontent.com/microsoft/sql-server-samples/refs/heads/master/samples/features/azure-arc/dashboard/Arc%20-%20ESU.json"
         "Arc - Estate Profile" = "https://raw.githubusercontent.com/microsoft/sql-server-samples/refs/heads/master/samples/features/azure-arc/dashboard/Arc%20-%20Estate%20Profile.json"
-        "Arc - Server Deployment" = "https://raw.githubusercontent.com/microsoft/sql-server-samples/refs/heads/master/samples/features/azure-arc/dashboard/Arc%20-%20Server%20Deployment.json"        
+        "Arc - Server Deployment" = "https://raw.githubusercontent.com/microsoft/sql-server-samples/refs/heads/master/samples/features/azure-arc/dashboard/Arc%20-%20Server%20Deployment.json"
         "Arc - SQL Server Inventory" = "https://raw.githubusercontent.com/microsoft/sql-server-samples/refs/heads/master/samples/features/azure-arc/dashboard/Arc%20-%20SQL%20Server%20Inventory.json"
         "SQL Server Estate Health" = "https://raw.githubusercontent.com/microsoft/sql-server-samples/refs/heads/master/samples/features/azure-arc/dashboard/SQL%20Server%20Estate%20Health.json"
         "SQL Server Instances" = "https://raw.githubusercontent.com/microsoft/sql-server-samples/refs/heads/master/samples/features/azure-arc/dashboard/SQL%20Server%20Instances.json"
